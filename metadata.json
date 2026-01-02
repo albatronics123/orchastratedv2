@@ -1,0 +1,8 @@
+{
+  "name": "Orchestrated MVP",
+  "description": "A unified communication dashboard for WhatsApp, LinkedIn, and more, featuring AI-powered reply suggestions with user-provided LLM keys.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
