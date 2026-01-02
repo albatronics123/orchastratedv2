@@ -63,18 +63,22 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onNavigate, onLogout, llmKe
   useEffect(() => {
     if (selectedConvId && activeTab === 'messages') {
       const loadMessages = async () => {
-        const msgData = await unipileService.getMessages(selectedConvId);
-        const mappedMsgs: Message[] = (msgData.items || []).map((m: any) => ({
-          id: m.id,
-          conversationId: selectedConvId,
-          sender: m.sender_type === 'USER' ? 'user' : 'contact',
-          content: m.text,
-          timestamp: new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        })).reverse();
-        
-        setMessages(mappedMsgs);
-        setSuggestions([]);
-        if (mappedMsgs.length > 0) fetchAISuggestions(mappedMsgs);
+        try {
+          const msgData = await unipileService.getMessages(selectedConvId);
+          const mappedMsgs: Message[] = (msgData.items || []).map((m: any) => ({
+            id: m.id,
+            conversationId: selectedConvId,
+            sender: m.sender_type === 'USER' ? 'user' : 'contact',
+            content: m.text,
+            timestamp: new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          })).reverse();
+          
+          setMessages(mappedMsgs);
+          setSuggestions([]);
+          if (mappedMsgs.length > 0) fetchAISuggestions(mappedMsgs);
+        } catch (err) {
+          console.error("Error loading messages:", err);
+        }
       };
       loadMessages();
     }
@@ -87,7 +91,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onNavigate, onLogout, llmKe
       const results = await generateSuggestions(currentMessages);
       setSuggestions(results);
     } catch (err) {
-      console.error(err);
+      console.error("Gemini Suggestion Error:", err);
     } finally {
       setIsGenerating(false);
     }
@@ -108,6 +112,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onNavigate, onLogout, llmKe
       }]);
     } catch (err) {
       alert('Failed to send message');
+      setMessageInput(text);
     }
   };
 
@@ -135,17 +140,17 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onNavigate, onLogout, llmKe
         <div className="mb-8">
           <h1 className="text-xl font-bold tracking-widest text-primary uppercase">Orchestrated</h1>
           <div className="mt-1 flex items-center gap-1 text-[8px] text-primary/60 font-bold uppercase tracking-[0.2em]">
-            <span className="w-1 h-1 rounded-full bg-primary animate-pulse"></span>
+            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
             Unified Hub
           </div>
         </div>
         
-        <div className="flex items-center gap-3 mb-8 p-3 bg-background-light dark:bg-surface-highlight rounded-xl border border-border-light dark:border-border-dark">
-          <img alt={user.name} className="w-10 h-10 rounded-full object-cover border border-primary" src={user.avatar_url} />
+        <div className="flex items-center gap-3 mb-8 p-3 bg-background-light dark:bg-surface-highlight rounded-xl border border-border-light dark:border-border-dark shadow-sm">
+          <img alt={user.name} className="w-10 h-10 rounded-full object-cover border border-primary/40 shadow-gold-glow" src={user.avatar_url} />
           <div className="overflow-hidden text-left">
             <p className="text-sm font-semibold truncate">{user.name}</p>
             <div className="flex items-center text-[10px] text-text-muted-dark uppercase font-bold tracking-tighter">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5"></span> Connected
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5 shadow-[0_0_5px_rgba(34,197,94,0.5)]"></span> Connected
             </div>
           </div>
         </div>
@@ -153,7 +158,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onNavigate, onLogout, llmKe
         <nav className="flex-1 space-y-1">
           <button 
             onClick={() => setActiveTab('messages')}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${activeTab === 'messages' ? 'bg-primary/10 text-primary font-medium border border-primary/20' : 'text-text-muted-dark hover:text-primary hover:bg-surface-highlight'}`}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${activeTab === 'messages' ? 'bg-primary/10 text-primary font-medium border border-primary/20 shadow-gold-glow' : 'text-text-muted-dark hover:text-primary hover:bg-surface-highlight'}`}
           >
             <span className="material-icons-outlined">chat_bubble_outline</span>
             <span className="text-sm flex-1 text-left">Inbox</span>
@@ -163,7 +168,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onNavigate, onLogout, llmKe
           </button>
           <button 
             onClick={() => setActiveTab('calendar')}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${activeTab === 'calendar' ? 'bg-primary/10 text-primary font-medium border border-primary/20' : 'text-text-muted-dark hover:text-primary hover:bg-surface-highlight'}`}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${activeTab === 'calendar' ? 'bg-primary/10 text-primary font-medium border border-primary/20 shadow-gold-glow' : 'text-text-muted-dark hover:text-primary hover:bg-surface-highlight'}`}
           >
             <span className="material-icons-outlined">calendar_today</span>
             <span className="text-sm flex-1 text-left">Calendar</span>
@@ -196,7 +201,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onNavigate, onLogout, llmKe
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-2xl font-bold tracking-tight">Messages</h2>
                   <button onClick={loadData} className="p-2 text-text-muted-dark hover:text-primary transition-colors">
-                    <span className="material-icons-outlined text-sm">refresh</span>
+                    <span className={`material-icons-outlined text-sm ${isLoading ? 'animate-spin' : ''}`}>refresh</span>
                   </button>
                 </div>
                 <div className="relative mb-4">
@@ -211,11 +216,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onNavigate, onLogout, llmKe
               </div>
 
               <div className="flex-1 overflow-y-auto px-4 space-y-2 pb-4">
-                {isLoading ? (
+                {isLoading && conversations.length === 0 ? (
                   [1, 2, 3, 4].map(i => <div key={i} className="h-20 bg-surface-dark/50 animate-pulse rounded-xl border border-border-dark"></div>)
                 ) : conversations.length === 0 ? (
                   <div className="text-center py-12 px-8 flex flex-col items-center">
-                    <div className="w-16 h-16 bg-surface-highlight rounded-full flex items-center justify-center mb-6">
+                    <div className="w-16 h-16 bg-surface-highlight rounded-full flex items-center justify-center mb-6 border border-border-dark">
                       <span className="material-icons-outlined text-3xl text-primary/40">link_off</span>
                     </div>
                     <h3 className="text-sm font-bold mb-2">Start Orchestrating</h3>
@@ -251,7 +256,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onNavigate, onLogout, llmKe
                         <div className="flex items-center gap-3">
                           <div className="relative">
                             <img src={conv.contactAvatar} className="w-10 h-10 rounded-full border border-primary/20" alt="" />
-                            <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-background-dark flex items-center justify-center p-0.5">
+                            <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-background-dark flex items-center justify-center p-0.5 border border-border-dark">
                               <span className="material-icons-outlined text-[10px]" style={{ color: platform?.color }}>{platform?.icon}</span>
                             </div>
                           </div>
@@ -284,6 +289,14 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onNavigate, onLogout, llmKe
                         </div>
                       </div>
                     </div>
+                    <div className="flex items-center gap-2">
+                      <button className="p-2 text-text-muted-dark hover:text-primary transition-colors">
+                        <span className="material-icons-outlined">videocam</span>
+                      </button>
+                      <button className="p-2 text-text-muted-dark hover:text-primary transition-colors">
+                        <span className="material-icons-outlined">info</span>
+                      </button>
+                    </div>
                   </header>
 
                   <div className="flex-1 flex overflow-hidden">
@@ -305,30 +318,38 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onNavigate, onLogout, llmKe
                     {/* AI PANEL */}
                     <aside className="w-[320px] border-l border-border-dark bg-[#141417] p-6 flex flex-col">
                       <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-xs font-bold uppercase tracking-widest text-primary">AI Suggestions</h3>
-                        <span className="material-icons-outlined text-sm text-text-muted-dark">auto_awesome</span>
+                        <h3 className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-2">
+                          <span className="material-icons-outlined text-sm animate-pulse-gold">auto_awesome</span>
+                          AI Suggestions
+                        </h3>
                       </div>
                       <div className="flex-1 space-y-4 overflow-y-auto scrollbar-hide">
                         {isGenerating ? (
-                          [1, 2, 3].map(i => <div key={i} className="h-24 bg-surface-dark/50 animate-pulse rounded-xl border border-border-dark"></div>)
+                          [1, 2, 3].map(i => (
+                            <div key={i} className="p-4 rounded-xl border border-border-dark bg-surface-dark/50 space-y-2">
+                              <div className="h-2 w-16 bg-primary/20 animate-pulse rounded"></div>
+                              <div className="h-3 w-full bg-border-dark animate-pulse rounded"></div>
+                              <div className="h-3 w-3/4 bg-border-dark animate-pulse rounded"></div>
+                            </div>
+                          ))
                         ) : suggestions.length > 0 ? (
                           suggestions.map((s, i) => (
                             <button 
                               key={i} 
                               onClick={() => setMessageInput(s.text)}
-                              className="w-full text-left p-4 rounded-xl border border-border-dark bg-surface-dark hover:border-primary/50 transition-all group"
+                              className="w-full text-left p-4 rounded-xl border border-border-dark bg-surface-dark hover:border-primary/50 hover:shadow-gold-glow transition-all group"
                             >
                               <div className="flex items-center gap-2 mb-2 text-primary">
-                                <span className="material-icons-outlined text-xs">chat_bubble</span>
+                                <span className="material-icons-outlined text-[10px]">chat_bubble</span>
                                 <span className="text-[9px] font-bold uppercase tracking-widest">{s.tone}</span>
                               </div>
-                              <p className="text-xs text-text-muted-dark leading-relaxed group-hover:text-white transition-colors">{s.text}</p>
+                              <p className="text-xs text-text-muted-dark leading-relaxed group-hover:text-text-main-dark transition-colors">{s.text}</p>
                             </button>
                           ))
                         ) : (
-                          <div className="text-center py-12 flex flex-col items-center justify-center h-full">
-                             <span className="material-icons-outlined text-3xl opacity-10 mb-2">bolt</span>
-                            <p className="text-[10px] text-text-muted-dark uppercase tracking-widest">Suggestions load here</p>
+                          <div className="text-center py-12 flex flex-col items-center justify-center h-full opacity-40">
+                             <span className="material-icons-outlined text-3xl mb-2">bolt</span>
+                            <p className="text-[10px] text-text-muted-dark uppercase tracking-widest leading-relaxed px-4 text-center">Open a conversation to generate smart replies</p>
                           </div>
                         )}
                       </div>
@@ -344,9 +365,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onNavigate, onLogout, llmKe
                   </div>
 
                   <div className="p-6 border-t border-border-dark">
-                    <div className="relative">
+                    <div className="relative group">
                       <input 
-                        className="w-full bg-surface-dark border border-border-dark rounded-2xl py-4 pl-6 pr-24 text-sm focus:border-primary outline-none" 
+                        className="w-full bg-surface-dark border border-border-dark rounded-2xl py-4 pl-6 pr-24 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-all" 
                         placeholder="Type message..." 
                         value={messageInput}
                         onChange={(e) => setMessageInput(e.target.value)}
@@ -355,17 +376,24 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onNavigate, onLogout, llmKe
                       <button 
                         onClick={handleSend}
                         disabled={!messageInput.trim()}
-                        className="absolute right-3 top-2.5 bg-primary text-background-dark px-5 py-2 rounded-xl text-xs font-bold shadow-gold-glow disabled:opacity-50"
+                        className="absolute right-3 top-2.5 bg-primary text-background-dark px-5 py-2 rounded-xl text-xs font-bold shadow-gold-glow hover:bg-primary-hover active:scale-95 disabled:opacity-50 transition-all"
                       >
                         SEND
                       </button>
+                    </div>
+                    <div className="mt-3 flex items-center gap-4 text-[9px] text-text-muted-dark uppercase font-bold tracking-widest px-2">
+                      <span className="flex items-center gap-1 hover:text-primary cursor-pointer transition-colors"><span className="material-icons-outlined text-[12px]">attachment</span> Attach</span>
+                      <span className="flex items-center gap-1 hover:text-primary cursor-pointer transition-colors"><span className="material-icons-outlined text-[12px]">mood</span> Emoji</span>
+                      <span className="flex items-center gap-1 ml-auto text-primary/60 italic">Orchestrated AI active</span>
                     </div>
                   </div>
                 </>
               ) : (
                 <div className="flex-1 flex flex-col items-center justify-center text-center opacity-30">
-                  <span className="material-icons-outlined text-6xl mb-4">forum</span>
-                  <p className="text-sm font-bold uppercase tracking-widest">Select conversation to begin</p>
+                  <div className="w-24 h-24 bg-surface-highlight rounded-full flex items-center justify-center mb-6 border border-border-dark">
+                    <span className="material-icons-outlined text-5xl">forum</span>
+                  </div>
+                  <p className="text-sm font-bold uppercase tracking-widest">Select a conversation to start Orchestrating</p>
                 </div>
               )}
             </main>
@@ -379,16 +407,16 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onNavigate, onLogout, llmKe
             </header>
 
             {isLoading ? (
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {[1, 2, 3, 4].map(i => <div key={i} className="h-40 bg-surface-dark/50 animate-pulse rounded-2xl border border-border-dark"></div>)}
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="h-40 bg-surface-dark/50 animate-pulse rounded-2xl border border-border-dark"></div>)}
                </div>
             ) : events.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center text-center py-20">
                 <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-6">
                   <span className="material-icons-outlined text-4xl text-primary">calendar_today</span>
                 </div>
-                <h3 className="text-xl font-bold mb-2">No Calendar Connected</h3>
-                <p className="text-text-muted-dark max-w-sm mb-8">Synchroniseer je Google Calendar om al je afspraken in dit overzicht te zien.</p>
+                <h3 className="text-xl font-bold mb-2 text-text-main-dark">No Calendar Connected</h3>
+                <p className="text-text-muted-dark max-w-sm mb-8 leading-relaxed">Synchroniseer je Google Calendar om al je afspraken in dit overzicht te zien.</p>
                 <button 
                   onClick={() => handleConnectPlatform('google_calendar')}
                   className="bg-primary text-background-dark font-bold px-8 py-3 rounded-xl shadow-gold-glow hover:bg-primary-hover transition-all"
@@ -399,22 +427,22 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onNavigate, onLogout, llmKe
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {events.map((ev, i) => (
-                  <div key={i} className="bg-surface-dark border border-border-dark p-6 rounded-2xl hover:border-primary/50 transition-all text-left group">
+                  <div key={i} className="bg-surface-dark border border-border-dark p-6 rounded-2xl hover:border-primary/50 transition-all text-left group hover:shadow-gold-glow">
                     <div className="flex justify-between items-start mb-4">
-                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20">
                         <span className="material-icons-outlined text-primary text-xl">event</span>
                       </div>
                       <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted-dark bg-background-dark px-2 py-1 rounded border border-border-dark">
                         {ev.status || 'Confirmed'}
                       </span>
                     </div>
-                    <h4 className="font-bold text-lg mb-1 group-hover:text-primary transition-colors">{ev.summary || 'Untitled Event'}</h4>
+                    <h4 className="font-bold text-lg mb-1 group-hover:text-primary transition-colors line-clamp-1">{ev.summary || 'Untitled Event'}</h4>
                     <p className="text-xs text-text-muted-dark mb-4">
-                      {ev.start?.dateTime ? new Date(ev.start.dateTime).toLocaleString() : 'All day'}
+                      {ev.start?.dateTime ? new Date(ev.start.dateTime).toLocaleString([], { weekday: 'long', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'All day'}
                     </p>
                     <div className="pt-4 border-t border-border-dark flex items-center justify-between">
-                       <span className="text-[10px] font-bold uppercase text-primary/60">Location: {ev.location || 'N/A'}</span>
-                       <span className="material-icons-outlined text-sm text-text-muted-dark">arrow_forward</span>
+                       <span className="text-[10px] font-bold uppercase text-primary/60 truncate max-w-[180px]">Location: {ev.location || 'N/A'}</span>
+                       <span className="material-icons-outlined text-sm text-text-muted-dark group-hover:translate-x-1 transition-transform">arrow_forward</span>
                     </div>
                   </div>
                 ))}
